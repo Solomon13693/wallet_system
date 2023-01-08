@@ -6,9 +6,5 @@
 # testing
 /coverage
 
-# Environment
-/.env
-/config.env
-
 # Vercel
 /vercel.json
