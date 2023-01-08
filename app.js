@@ -10,7 +10,6 @@ const walletRoute = require('./routes/walletRoute')
 const transferRoute = require('./routes/transferRoute')
 const billsRoute = require('./routes/billRoute')
 const path = require('path');
-const bodyParser = require('body-parser')
 
 
 
@@ -19,8 +18,6 @@ app.use(morgan('dev'))
 connectDB()
 
 app.use(express.json())
-
-app.use(bodyParser.urlencoded({ extended: true }));
 
 // ROUTES
 app.use('/api/v1/auth/', userRoute)

@@ -31,7 +31,7 @@ exports.userRegistration = asyncHandler(async (req, res, next) => {
     verifyUser(user)
 
     // create users wallet account
-     await validateUserWallet(user._id);
+    await validateUserWallet(user._id);
 
     return res.status(201).json({
         status: 'success',
@@ -212,7 +212,6 @@ exports.UserProfile = asyncHandler(async (req, res, next) => {
 
 })
 
-
 exports.UpdateUser = asyncHandler(async (req, res, next) => {
 
     let user = await User.findById(req.user.id)
@@ -272,16 +271,15 @@ exports.UpdateUserPassword = asyncHandler(async (req, res, next) => {
 
 })
 
-  
-  const validateUserWallet = asyncHandler(async(userId) => {
+const validateUserWallet = asyncHandler(async (userId) => {
 
     const userWallet = await Wallet.findOne({ user: userId });
 
     if (!userWallet) {
-         await Wallet.create({
+        await Wallet.create({
             balance: 0,
             user: userId
-         });
+        });
     }
 
-  });
+});

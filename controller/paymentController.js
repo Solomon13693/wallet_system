@@ -4,50 +4,68 @@ const Transaction = require('../models/transcations')
 const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorResponse')
 const Flutterwave = require('flutterwave-node-v3');
+const axios = require('axios');
 
 const flw = new Flutterwave(process.env.FLUTTERWAVE_V3_PUBLIC_KEY, process.env.FLUTTERWAVE_V3_SECRET_KEY);
 
+exports.fundWallet = asyncHandler(async (req, res) => {
 
-exports.paymentResponse = async (req, res) => {
-
-  const { transaction_id } = req.query;
-
-  let response
-
-  try {
-
-    const payload = { "id": transaction_id }
-    response = await flw.Transaction.verify(payload)
-
-
-    console.log(response);
-
-  } catch (error) {
-    console.log(error);
-  }
-
-  const { status, currency, id, amount, customer } = response.data;
-
-  // check if transaction id already exist
-  const transactionExist = await Transaction.findOne({ transactionId: id });
-
-  if (transactionExist) {
-    return res.status(409).send("Transaction Already Exist");
-  }
-
-  // check if customer exist in our database
-  const user = await User.findOne({ email: customer.email });
-
-  // create transaction
-  await createTransaction(user._id, id, status, currency, amount, customer);
-
-  await updateWallet(user._id, amount);
-
-  return res.status(200).json({
-    response: "wallet funded successfully"
+  const response = await axios.post("https://api.flutterwave.com/v3/payments", {
+    headers: {
+      Authorization: `Bearer ${process.env.FLUTTERWAVE_V3_SECRET_KEY}`
+    },
+    json: {
+      tx_ref: "hooli-tx-1920bbtytty",
+      amount: "100",
+      currency: "NGN",
+      redirect_url: "https://webhook.site/9d0b00ba-9a69-44fa-a43d-a82c33c36fdc",
+      meta: {
+        consumer_id: 23,
+        consumer_mac: "92a3-912ba-1192a"
+      },
+      customer: {
+        email: "user@gmail.com",
+        phonenumber: "080****4528",
+        name: "Yemi Desola"
+      },
+      customizations: {
+        title: "Pied Piper Payments",
+        logo: "http://www.piedpiper.com/app/themes/joystick-v27/images/logo.png"
+      }
+    }
   });
 
-}
+  return res.json(200).json({
+    status: 'success',
+    data: {
+      response
+    }
+  })
+
+})
+
+exports.flutterwaveWebHook = asyncHandler(async (req, res) => {
+
+  // If you specified a secret hash, check for the signature
+  const secretHash = process.env.FLW_SECRET_HASH;
+
+  const signature = req.headers["verif-hash"];
+
+  if (!signature || (signature !== secretHash)) {
+
+    // This request isn't from Flutterwave; discard
+    console.log('Secret hash is not correct');
+    res.status(401).end();
+  }
+  const payload = req.body;
+
+  if (payload.data.status == 'successful') {
+    await verifyPayment(payload.data, res)
+  } else {
+    console.log('Error: ' + payload.data.status);
+  }
+
+})
 
 exports.getWallet = asyncHandler(async (req, res, next) => {
 
@@ -101,6 +119,43 @@ exports.allTranscation = asyncHandler(async (req, res, next) => {
 
 })
 
+const verifyPayment = async (payload, res) => {
+
+  const response = await flw.Transaction.verify({ id: payload.id });
+
+  if (response.data.status === "successful") {
+
+    const { status, currency, id, amount, customer } = response.data;
+
+    // check if transaction id already exist
+    const transactionExist = await Transaction.findOne({ transactionId: id });
+
+    if (transactionExist) {
+      return res.status(409).send("Transaction Already Exist");
+    }
+
+    // check if customer exist in our database
+    const user = await User.findOne({ email: customer.email });
+
+    // create transaction
+    await createTransaction(user._id, id, status, currency, amount, customer);
+
+    await updateWallet(user._id, amount);
+
+    return res.status(200).json({
+      response: "wallet funded successfully"
+    });
+
+  } else {
+
+    return res.status(200).json({
+      response: "Your payment was not successful"
+    });
+
+  }
+
+}
+
 // Create Transaction
 const createTransaction = async (
   user,
@@ -143,3 +198,4 @@ const updateWallet = async (user, amount) => {
     console.log(error);
   }
 };
+

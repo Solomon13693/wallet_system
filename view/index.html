@@ -15,14 +15,13 @@
       function makePayment() {
         FlutterwaveCheckout({
           public_key: "FLWPUBK_TEST-dcb6b605e97ae3548f71b951d4fc63a9-X",
-          tx_ref: "hooli-tx-1920bbtyt",
+          tx_ref: "hooli-tx-1920bbtnt",
           amount: 1000,
           currency: "NGN",
           country: "NG",
           payment_options: "card",
 
           // specified redirect URL
-          redirect_url: "http://localhost:8000/api/v1/payment/response",
 
           // use customer details if user is not logged in, else add user_id to the request
           customer: {
@@ -31,7 +30,7 @@
             name: "Adeoye Solomon",
           },
           callback: function (data) {
-            console.log(data);
+            // console.log(data);
           },
           onclose: function () {
             // close modal

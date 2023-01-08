@@ -10,11 +10,12 @@ const walletSchema = Schema(
             required: true
         },
     },
-    { timestamps: true }
-);
+    { 
+        timestamps: true 
+    });
 
-walletSchema.pre(/^find/, function(next) {
-    this.populate({ path: 'user'})
+walletSchema.pre(/^find/, function (next) {
+    this.populate({ path: 'user' })
     next()
 })
 
